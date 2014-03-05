@@ -85,10 +85,7 @@ class lqueue
           tagged_ptr<node> new_head(old_next.get_ptr(), old_head.next_tag());
           if (head.compare_exchange_strong(old_head, new_head))
           {
-            if (old_head)
-            {
-              delete old_head.get_ptr();
-            }
+            //delete old_head.get_ptr();
             return true;
           }
         }

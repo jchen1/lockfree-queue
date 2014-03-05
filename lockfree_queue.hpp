@@ -36,11 +36,11 @@ class lqueue
     for (;;)
     {
       auto old_tail = tail.load(std::memory_order_acquire);
-      auto old_next = tail->next.load(std::memory_order_acquire);
+      auto old_next = old_tail->next.load(std::memory_order_acquire);
       if (old_tail == tail.load(std::memory_order_acquire) && !old_next)
       {
         tagged_ptr<node> new_next(n, old_next.next_tag());
-        if (tail->next.compare_exchange_weak(old_next, new_next))
+        if (old_tail->next.compare_exchange_weak(old_next, new_next))
         {
           tagged_ptr<node> new_tail(n, old_tail.next_tag());
           tail.compare_exchange_strong(old_tail, new_tail);
@@ -82,7 +82,7 @@ class lqueue
         }
         else
         {
-          ret = *old_next;
+          ret = old_next->data;
           tagged_ptr<node> new_head(old_next.get_ptr(), old_head.next_tag());
           if (head.compare_exchange_strong(old_head, new_head))
           {

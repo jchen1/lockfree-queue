@@ -2,6 +2,7 @@
 #define LOCKFREE_QUEUE_H
 
 #include <atomic>   /* std::atomic */
+#include <cstdio>
 
 #include "tagged_ptr.hpp"
 
@@ -22,9 +23,9 @@ class lqueue
    */
   lqueue()
   {
-    tagged_ptr<node> dummy{};
-    head = dummy;
-    tail = dummy;
+    node* dummy = new node();
+    head = tagged_ptr<node>(dummy, 0);
+    tail = tagged_ptr<node>(dummy, 0);
   }
 
   /*
@@ -102,7 +103,10 @@ class lqueue
   class node
   {
    public:
-    node() noexcept : next(nullptr) {}
+    node() noexcept
+    {
+      next = tagged_ptr<node>(nullptr);
+    }
     node(const T & v) : data(v)
     {
       auto old_next = next.load(std::memory_order_relaxed);

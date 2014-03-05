@@ -2,9 +2,6 @@
 #define LOCKFREE_QUEUE_H
 
 #include <atomic>   /* std::atomic */
-#include <cstddef>  /* std::size_t */
-#include <limits>   /* std::numeric_limits */
-#include <utility>  /* std::pair, std::make_pair */
 
 #include "tagged_ptr.hpp"
 

@@ -5,25 +5,21 @@
 
 #include "tagged_ptr.hpp"
 
+
+/*
+ * lqueue provides a multi-reader/multi-writer queue with lock-free push and pop
+ * operations. Construction and destruction must be synchronized. Based off of
+ * the lock-free algorithm from "Simple, Fast, and Practical Non-Blocking and
+ * Blocking Concurrent Queue Algorithms" by MM Michael and ML Scott (1996).
+ */
 template <typename T>
 class lqueue
 {
  public:
-  class node
-  {
-   public:
-    node() noexcept : next(nullptr) {}
-    node(const T & v) : data(v)
-    {
-      auto old_next = next.load(std::memory_order_relaxed);
-      tagged_ptr<node> new_next(nullptr, old_next.next_tag());
-      next.store(new_next, std::memory_order_release);
-    }
 
-    std::atomic<tagged_ptr<node>> next;
-    T data;
-  };
-
+  /*
+   * Constructs an empty queue.
+   */
   lqueue()
   {
     tagged_ptr<node> dummy{};
@@ -31,9 +27,12 @@ class lqueue
     tail = dummy;
   }
 
-  bool push(const T & data)
+  /*
+   * Pushes object t into the queue. Returns true if the push succeeds.
+   */
+  bool push(const T & t)
   {
-    node* n = new node(data);
+    node* n = new node(t);
     for (;;)
     {
       auto old_tail = tail.load(std::memory_order_acquire);
@@ -55,6 +54,10 @@ class lqueue
     }
   }
 
+  /*
+   * Pops an object from the queue and stores it in ret. Returns true if the
+   * pop succeeds.
+   */
   bool pop(T & ret)
   {
     tagged_ptr<node> old_head;
@@ -69,7 +72,7 @@ class lqueue
         {
           if (!old_next)
           {
-            return false;   //empty
+            return false;
           }
           else
           {
@@ -96,6 +99,21 @@ class lqueue
   }
 
  private:
+  class node
+  {
+   public:
+    node() noexcept : next(nullptr) {}
+    node(const T & v) : data(v)
+    {
+      auto old_next = next.load(std::memory_order_relaxed);
+      tagged_ptr<node> new_next(nullptr, old_next.next_tag());
+      next.store(new_next, std::memory_order_release);
+    }
+
+    std::atomic<tagged_ptr<node>> next;
+    T data;
+  };
+
   std::atomic<tagged_ptr<node>> head, tail;
 };
 

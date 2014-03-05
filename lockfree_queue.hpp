@@ -38,19 +38,23 @@ class lqueue
     {
       auto old_tail = tail.load(std::memory_order_acquire);
       auto old_next = old_tail->next.load(std::memory_order_acquire);
-      if (old_tail == tail.load(std::memory_order_acquire) && !old_next)
+      if (old_tail == tail.load(std::memory_order_acquire))
       {
-        tagged_ptr<node> new_next(n, old_next.next_tag());
-        if (old_tail->next.compare_exchange_weak(old_next, new_next))
+        if (!old_next)
         {
-          tagged_ptr<node> new_tail(n, old_tail.next_tag());
+          tagged_ptr<node> new_next(n, old_next.next_tag());
+          if (old_tail->next.compare_exchange_weak(old_next, new_next))
+          {
+            tagged_ptr<node> new_tail(n, old_tail.next_tag());
+            tail.compare_exchange_strong(old_tail, new_tail);
+            return true;
+          }
+        }
+        else
+        {
+          tagged_ptr<node> new_tail(old_next.get_ptr(), old_tail.next_tag());
           tail.compare_exchange_strong(old_tail, new_tail);
         }
-      }
-      else
-      {
-        tagged_ptr<node> new_tail(old_next.get_ptr(), old_tail.next_tag());
-        tail.compare_exchange_strong(old_tail, new_tail);
       }
     }
   }

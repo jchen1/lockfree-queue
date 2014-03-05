@@ -24,7 +24,7 @@ class tagged_ptr
     return tag;
   }
 
-  tag_t get_next_tag() const
+  tag_t next_tag() const
   {
     return (get_tag() + 1) & (std::numeric_limits<tag_t>::max)();
   }

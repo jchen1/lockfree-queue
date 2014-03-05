@@ -11,7 +11,7 @@ class tagged_ptr
   using tag_t = std::size_t;
 
   tagged_ptr() noexcept: ptr(nullptr), tag(0) {}
-  explicit tagged_ptr(T* p, std::size_t t = 0) : ptr(p), tag(t) {}
+  explicit tagged_ptr(T* p, tag_t t = 0) : ptr(p), tag(t) {}
 
   void set(T* p, tag_t t)
   {
@@ -57,6 +57,16 @@ class tagged_ptr
   operator bool(void) const
   {
     return ptr != 0;
+  }
+
+  bool operator==(volatile tagged_ptr<T>& other)
+  {
+    return (ptr == other.ptr) && (tag == other.tag);
+  }
+
+  bool operator!= (volatile tagged_ptr<T>& other)
+  {
+    return !(operator==(other));
   }
 
  private:

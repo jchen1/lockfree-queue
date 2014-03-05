@@ -13,20 +13,9 @@ class tagged_ptr
   tagged_ptr() noexcept: ptr(nullptr), tag(0) {}
   explicit tagged_ptr(T* p, tag_t t = 0) : ptr(p), tag(t) {}
 
-  void set(T* p, tag_t t)
-  {
-    ptr = p;
-    tag = t;
-  }
-
-  tag_t get_tag() const
-  {
-    return tag;
-  }
-
   tag_t next_tag() const
   {
-    return (get_tag() + 1) & (std::numeric_limits<tag_t>::max)();
+    return (tag + 1) & (std::numeric_limits<tag_t>::max)();
   }
 
   void set_tag(tag_t t)
@@ -56,7 +45,7 @@ class tagged_ptr
 
   operator bool(void) const
   {
-    return ptr != 0;
+    return ptr != nullptr;
   }
 
   bool operator==(volatile tagged_ptr<T>& other)

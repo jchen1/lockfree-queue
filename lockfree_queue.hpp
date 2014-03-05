@@ -2,10 +2,8 @@
 #define LOCKFREE_QUEUE_H
 
 #include <atomic>   /* std::atomic */
-#include <cstdio>
 
 #include "tagged_ptr.hpp"
-
 
 /*
  * lqueue provides a multi-reader/multi-writer queue with lock-free push and pop
@@ -65,25 +63,21 @@ class lqueue
    */
   bool pop(T & ret)
   {
-    tagged_ptr<node> old_head;
     for (;;)
     {
-      old_head = head.load(std::memory_order_acquire);
+      auto old_head = head.load(std::memory_order_acquire);
       auto old_tail = tail.load(std::memory_order_acquire);
       auto old_next = old_head->next.load(std::memory_order_acquire);
       if (old_head == head.load(std::memory_order_acquire))
       {
-        if (old_head == old_tail)
+        if (old_head.get_ptr() == old_tail.get_ptr())
         {
           if (!old_next)
           {
             return false;
           }
-          else
-          {
-            tagged_ptr<node> new_tail(old_next.get_ptr(), old_tail.next_tag());
-            tail.compare_exchange_strong(old_tail, new_tail);
-          }
+          tagged_ptr<node> new_tail(old_next.get_ptr(), old_tail.next_tag());
+          tail.compare_exchange_strong(old_tail, new_tail);
         }
         else
         {
@@ -91,16 +85,15 @@ class lqueue
           tagged_ptr<node> new_head(old_next.get_ptr(), old_head.next_tag());
           if (head.compare_exchange_strong(old_head, new_head))
           {
-            break;
+            if (old_head)
+            {
+              delete old_head.get_ptr();
+            }
+            return true;
           }
         }
       }
     }
-    if (old_head)
-    {
-      delete old_head.get_ptr();
-    }
-    return true;
   }
 
  private:
